@@ -22,17 +22,18 @@ DIR="${DIR:-$HOME/Yunzai}"
 CMD="${CMD:-rabbit}"
 CMDPATH="${CMDPATH:-/usr/local/bin}"
 
+# 更换清华大学源
+echo -e "$Y- 正在更换清华大学源$O"
+cat > /etc/pacman.d/mirrorlist <<EOF
+Server = https://mirrors.tuna.tsinghua.edu.cn/msys2/msys/\$repo
+Server = https://mirrors.ustc.edu.cn/msys2/msys/\$repo
+EOF
+
 type pacman &>/dev/null || abort "找不到 pacman 命令，请确认安装了正确的 Arch Linux 环境"
 type curl dialog git &>/dev/null || {
   echo -e "$Y- 正在安装依赖$O"
   pacman -Syu --noconfirm --needed --overwrite "*" curl dialog git || abort "依赖安装失败"
 }
-
-# 更换清华大学源
-echo -e "$Y- 正在更换清华大学源$O"
-cat > /etc/pacman.d/mirrorlist <<EOF
-Server = https://mirrors.tuna.tsinghua.edu.cn/msys2/msys/\$repo
-EOF
 
 # 更新密钥环并安装依赖
 echo -e "$Y- 正在更新密钥环并安装依赖$O"
