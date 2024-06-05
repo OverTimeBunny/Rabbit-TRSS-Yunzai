@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Rabbit TRSS Yunzai 安装脚本 - Windows
+# Rabbit TRSS Yunzai 安装脚本
 NAME=v1.0.0;VERSION=202306010
 R="\033[1;31m" G="\033[1;32m" Y="\033[1;33m" C="\033[1;36m" B="\033[m" O="\033[m"
 
