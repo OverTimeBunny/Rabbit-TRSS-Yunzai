@@ -40,7 +40,9 @@ echo -e "$Y- 正在更新密钥环并安装依赖$O"
 pacman-key --init
 pacman-key --populate msys2
 pacman -Syyu --noconfirm
-pacman -S --noconfirm nodejs npm
+pacman -S --noconfirm mingw-w64-x86_64-nodejs mingw-w64-x86_64-npm
+npm install -g npm
+npm install -g pnpm
 
 abort_update() {
   echo -e "$R! $@$O"
@@ -215,85 +217,22 @@ Configure_ICQQ() {
     curl -o /dev/null -s "$url"
     end_time=$(date +%s%N)
     latency=$(( (end_time - start_time) / 1000000 ))
-
     if [ $latency -lt $min_latency ]; then
       min_latency=$latency
       selected_url=$url
     fi
   done
 
-  echo -e "$Y- 已选签名${selected_url}，延迟${min_latency}ms，正在配置$O"
+  echo "最佳签名地址：$selected_url"
+
+  read -p "输入你的ICQQ QQ: " icqq_qq
+  read -p "输入你的ICQQ Token: " icqq_token
 
   cat >"$DIR/config/ICQQ.yaml" <<EOF
-tips:
-  - 欢迎使用 TRSS-Yunzai ICQQ Plugin ! 作者：时雨🌌星空
-  - 参考：https://github.com/TimeRainStarSky/Yunzai-ICQQ-Plugin
-permission: master
-markdown:
-  mode: false
-  button: false
-  callback: true
-bot:
-  sign_api_addr: $selected_url
-token: []
-EOF
-
-  read -p "请输入你机器人的QQ: " bot_qq
-  read -p "请输入你机器人的QQ密码: " bot_password
-
-  cat >>"$DIR/config/ICQQ.yaml" <<EOF
-  - $bot_qq:$bot_password:2
-EOF
-
-  node app &
-}
-
-Configure_NTQQ() {
-  git clone --depth 1 https://gitee.com/TimeRainStarSky/Yunzai-Lagrange-Plugin plugins/Lagrange-Plugin || abort_update "下载失败"
-  node app &
-  sleep 5
-  [ -f "$DIR/config/NTQQ.yaml" ] || abort "配置文件加载失败：$DIR/config/NTQQ.yaml"
-  kill %1
-
-  echo -e "$Y- 正在检查NTQQ签名$O"
-  sign_urls=('https://hlhs-nb.cn/signed/?key=114514' 'http://1.QSign.icu?key=XxxX' 'http://2.QSign.icu?key=XxxX' 'http://3.QSign.icu?key=XxxX' 'http://4.QSign.icu?key=XxxX' 'http://5.QSign.icu?key=XxxX')
-
-  min_latency=9999
-  selected_url=''
-
-  for url in "${sign_urls[@]}"; do
-    start_time=$(date +%s%N)
-    curl -o /dev/null -s "$url"
-    end_time=$(date +%s%N)
-    latency=$(( (end_time - start_time) / 1000000 ))
-
-    if [ $latency -lt $min_latency ]; then
-      min_latency=$latency
-      selected_url=$url
-    fi
-  done
-
-  echo -e "$Y- 已选签名${selected_url}，延迟${min_latency}ms，正在配置$O"
-
-  cat >"$DIR/config/NTQQ.yaml" <<EOF
-tips:
-  - 欢迎使用 TRSS-Yunzai NTQQ Plugin ! 作者：时雨🌌星空
-  - 参考：https://github.com/TimeRainStarSky/Yunzai-NTQQ-Plugin
-permission: master
-markdown:
-  mode: false
-  button: false
-  callback: true
-bot:
-  sign_api_addr: $selected_url
-token: []
-EOF
-
-  read -p "请输入你机器人的QQ: " bot_qq
-  read -p "请输入你机器人的QQ密码: " bot_password
-
-  cat >>"$DIR/config/NTQQ.yaml" <<EOF
-  - $bot_qq:$bot_password:2
+icqq:
+  account: $icqq_qq
+  token: $icqq_token
+  sign_url: $selected_url
 EOF
 
   node app &
