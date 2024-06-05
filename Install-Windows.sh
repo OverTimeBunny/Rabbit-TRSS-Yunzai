@@ -42,6 +42,10 @@ download() {
   esac
 
   echo -e "$Y- 正在从 $Server 服务器 下载文件$O"
+  if [ -d "$DIR" ]; then
+    echo -e "$Y- 删除已有目录：$DIR$O"
+    rm -rf "$DIR"
+  fi
   mkdir -vp "$DIR" && git clone --depth 1 "$URL" "$DIR" || abort_update "下载失败"
   mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/app'"' "$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/app'"
   if [ -n "$MSYS" ]; then
