@@ -47,7 +47,7 @@ download() {
     rm -rf "$DIR"
   fi
   mkdir -vp "$DIR" && git clone --depth 1 "$URL" "$DIR" || abort_update "下载失败"
-  mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/app'"' "$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/app'"
+  mkdir -vp "$CMDPATH" && echo -n "cd '$DIR' && node app"' "$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：cd '$DIR' && node app"
   if [ -n "$MSYS" ]; then
     type powershell &>/dev/null && powershell -c '$ShortCut=(New-Object -ComObject WScript.Shell).CreateShortcut([System.Environment]::GetFolderPath("Desktop")+"\'"$(basename "$DIR"|tr '_' ' ')"'.lnk")
 $ShortCut.TargetPath="'"$(cygpath -w /msys2.exe)"'"
