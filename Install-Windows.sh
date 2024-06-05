@@ -23,17 +23,35 @@ echo -e "$G 欢迎使用 Rabbit-TRSS-Yunzai ! 作者：重装小兔 🐰$O"
 
 abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } || abort "你他喵的网络是怎么回事！给我好好检查你的网络环境！"; }
 
-# 检查并安装git
-if ! type git &>/dev/null; then
-  echo -e "$Y- 正在安装 git$O"
-  if type pacman &>/dev/null; then
-    pacman -Sy --noconfirm git || abort "git 安装失败"
-  elif type apt-get &>/dev/null; then
-    apt-get update && apt-get install -y git || abort "git 安装失败"
-  else
-    abort "找不到合适的包管理器来安装 git"
+# 检查并安装必要的依赖项
+install_dependencies() {
+  if ! type git &>/dev/null; then
+    echo -e "$Y- 正在安装 git$O"
+    if type pacman &>/dev/null; then
+      pacman -Sy --noconfirm git || abort "git 安装失败"
+    elif type apt-get &>/dev/null; then
+      apt-get update && apt-get install -y git || abort "git 安装失败"
+    else
+      abort "找不到合适的包管理器来安装 git"
+    fi
   fi
-fi
+
+  if ! type node &>/dev/null; then
+    echo -e "$Y- 正在安装 Node.js$O"
+    if type pacman &>/dev/null; then
+      pacman -Sy --noconfirm nodejs npm || abort "Node.js 安装失败"
+    elif type apt-get &>/dev/null; then
+      apt-get update && apt-get install -y nodejs npm || abort "Node.js 安装失败"
+    else
+      abort "找不到合适的包管理器来安装 Node.js"
+    fi
+  fi
+
+  if ! type pnpm &>/dev/null; then
+    echo -e "$Y- 正在安装 pnpm$O"
+    npm install -g pnpm || abort "pnpm 安装失败"
+  fi
+}
 
 download() {
   case "$N" in
@@ -47,7 +65,7 @@ download() {
     rm -rf "$DIR"
   fi
   mkdir -vp "$DIR" && git clone --depth 1 "$URL" "$DIR" || abort_update "下载失败"
-  mkdir -vp "$CMDPATH" && echo -n "cd '$DIR' && node app"' "$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：cd '$DIR' && node app"
+  mkdir -vp "$CMDPATH" && echo -n "cd '$DIR' && node app.js"' "$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：cd '$DIR' && node app.js"
   if [ -n "$MSYS" ]; then
     type powershell &>/dev/null && powershell -c '$ShortCut=(New-Object -ComObject WScript.Shell).CreateShortcut([System.Environment]::GetFolderPath("Desktop")+"\'"$(basename "$DIR"|tr '_' ' ')"'.lnk")
 $ShortCut.TargetPath="'"$(cygpath -w /msys2.exe)"'"
@@ -64,6 +82,7 @@ $ShortCut.Save()'
 }
 
 N=1
+install_dependencies
 download
 
 # 启动菜单
@@ -97,7 +116,7 @@ configure_qqbot() {
     fi
   fi
 
-  node app &
+  node app.js &
   sleep 5
   if [ -f "$DIR/config/QQBot.yaml" ]; then
     echo -e "$Y- 监听文件位置：Yunzai/config/QQBot.yaml$O"
@@ -152,7 +171,7 @@ token:
   - $bot_qq:$bot_id:$bot_token:$bot_secret:$bot_group:$bot_public
 EOF
 
-  node app &
+  node app.js &
 }
 
 configure_icqq() {
@@ -164,7 +183,7 @@ configure_icqq() {
     fi
   fi
 
-  node app &
+  node app.js &
   sleep 5
   if [ -f "$DIR/config/ICQQ.yaml" ]; then
     echo -e "$Y- 监听文件位置：Yunzai/config/ICQQ.yaml$O"
@@ -216,7 +235,7 @@ EOF
   - $bot_qq:$bot_password:2
 EOF
 
-  node app &
+  node app.js &
 }
 
 configure_ntqq() {
@@ -228,7 +247,7 @@ configure_ntqq() {
     fi
   fi
 
-  node app &
+  node app.js &
   sleep 5
   if [ -f "$DIR/config/Lagrange.yaml" ]; then
     echo -e "$Y- 监听文件位置：Yunzai/config/Lagrange.yaml$O"
@@ -262,7 +281,7 @@ EOF
   - $bot_qq:$bot_password
 EOF
 
-  node app &
+  node app.js &
 }
 
 main_menu
