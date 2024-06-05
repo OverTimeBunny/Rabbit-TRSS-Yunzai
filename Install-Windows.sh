@@ -30,8 +30,8 @@ download() {
   esac
 
   echo -e "$Y- 正在从 $Server 服务器 下载文件$O"
-  mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 "$URL/Main.sh" -o "$DIR/Main.sh" || abort_update "下载失败"
-  mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/Main.sh' "'"$@"'>"$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/Main.sh'"
+  mkdir -vp "$DIR" && git clone --depth 1 "$URL" "$DIR" || abort_update "下载失败"
+  mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/app'"' "$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/app'"
   if [ -n "$MSYS" ]; then
     type powershell &>/dev/null && powershell -c '$ShortCut=(New-Object -ComObject WScript.Shell).CreateShortcut([System.Environment]::GetFolderPath("Desktop")+"\'"$(basename "$DIR"|tr '_' ' ')"'.lnk")
 $ShortCut.TargetPath="'"$(cygpath -w /msys2.exe)"'"
@@ -117,7 +117,7 @@ configure_qqbot() {
     break
   done
 
-  cat > "$DIR/config/QQBot.yaml" <<EOF
+  cat > $DIR/config/QQBot.yaml <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai QQBot Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-QQBot-Plugin
@@ -179,7 +179,7 @@ configure_icqq() {
 
   echo -e "$Y- 已选签名${selected_url}，延迟${min_latency}ms，正在配置$O"
 
-  cat > "$DIR/config/ICQQ.yaml" <<EOF
+  cat > $DIR/config/ICQQ.yaml <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai ICQQ Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-ICQQ-Plugin
@@ -196,7 +196,7 @@ EOF
   read -p '请输入你机器人的QQ: ' bot_qq
   read -p '请输入你机器人的QQ密码: ' bot_password
 
-  cat >> "$DIR/config/ICQQ.yaml" <<EOF
+  cat >> $DIR/config/ICQQ.yaml <<EOF
   - $bot_qq:$bot_password:2
 EOF
 
@@ -225,7 +225,7 @@ configure_ntqq() {
 
   echo -e "$Y- 启动测试成功，正在为你配置签名$O"
 
-  cat > "$DIR/config/Lagrange.yaml" <<EOF
+  cat > $DIR/config/Lagrange.yaml <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai Lagrange Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-Lagrange-Plugin
@@ -242,7 +242,7 @@ EOF
   read -p '请输入你机器人的QQ账号: ' bot_qq
   read -p '请输入你机器人的QQ密码: ' bot_password
 
-  cat >> "$DIR/config/Lagrange.yaml" <<EOF
+  cat >> $DIR/config/Lagrange.yaml <<EOF
   - $bot_qq:$bot_password
 EOF
 
@@ -250,36 +250,3 @@ EOF
 }
 
 main_menu
-
-# 启动 rabbit 脚本
-echo -e "$Y- 正在下载 Yunzai 崽$O"
-download
-
-# 安装依赖和插件
-echo -e "$Y- 安装项目依赖$O"
-pnpm install
-
-echo -e "$Y- 正在为你安装基础插件：TRSS-Plugin、Miao-Plugin、Guoba-Plugin$O"
-git clone --depth 1 https://gitee.com/OvertimeBunny/trss-plugin.git plugins/TRSS-Plugin
-cd plugins/TRSS-Plugin && pnpm install && cd ..
-
-git clone --depth=1 https://gitee.com/yoimiya-kokomi/miao-plugin.git plugins/miao-plugin
-cd plugins/miao-plugin && pnpm install && cd ..
-
-git clone --depth=1 https://gitee.com/guoba-yunzai/guoba-plugin.git plugins/Guoba-Plugin
-cd plugins/Guoba-Plugin && pnpm install && cd ..
-
-echo -e "$G- 安装完成，即将启动云崽$O"
-node app &
-sleep 5
-echo -e "$Y- 加载配置文件$O"
-if [ -d "$DIR/data" ]; then
-  echo -e "$Y- 监听文件位置：Yunzai/data$O"
-else
-  echo -e "$R! Yunzai/data 文件加载失败$O"
-  exit 1
-fi
-
-kill %1
-
-trap 'main_menu' SIGINT
