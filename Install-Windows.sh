@@ -29,16 +29,8 @@ download() {
     2) Server="GitHub" URL="https://github.com/TimeRainStarSky/Yunzai";;
   esac
 
-  echo -e "$Y- 正在从 $Server 服务器 下载版本信息$O"
-  GETVER="$(curl -kL --retry 2 --connect-timeout 5 "$URL/version" 2>/dev/null)" || abort_update "下载失败"
-  NEWVER="$(sed -n 's/^version=//p' <<< "$GETVER")"
-  NEWNAME="$(sed -n 's/^name=//p' <<< "$GETVER")"
-  NEWMD5="$(sed -n 's/^md5=//p' <<< "$GETVER")"
-  [ -n "$NEWVER" ] && [ -n "$NEWNAME" ] && [ -n "$NEWMD5" ] || abort_update "下载文件版本信息缺失"
-  echo -e "$B  最新版本：$G$NEWNAME$C ($NEWVER)$O\n"
-  echo -e "  开始下载"
+  echo -e "$Y- 正在从 $Server 服务器 下载文件$O"
   mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 "$URL/Main.sh" -o "$DIR/Main.sh" || abort_update "下载失败"
-  [ "$(md5sum "$DIR/Main.sh" | head -c 32)" = "$NEWMD5" ] || abort_update "下载文件校验错误"
   mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/Main.sh' "'"$@"'>"$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/Main.sh'"
   if [ -n "$MSYS" ]; then
     type powershell &>/dev/null && powershell -c '$ShortCut=(New-Object -ComObject WScript.Shell).CreateShortcut([System.Environment]::GetFolderPath("Desktop")+"\'"$(basename "$DIR"|tr '_' ' ')"'.lnk")
