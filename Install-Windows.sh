@@ -36,7 +36,8 @@ abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } |
 
 download() {
   case "$N" in
-    1) Server="Gitee" URL="https://raw.giteesercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main/Install-Windows.sh";;
+    1) Server="Gitee" URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main/Install-Windows.sh
+";;
     2) Server="GitHub" URL="https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main/Install-Windows.sh";;
   esac
 
