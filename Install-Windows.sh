@@ -23,9 +23,14 @@ CMD="${CMD:-rabbit}"
 CMDPATH="${CMDPATH:-/usr/local/bin}"
 
 type pacman &>/dev/null || abort "找不到 pacman 命令，请确认安装了正确的 Arch Linux 环境"
-type curl dialog &>/dev/null || {
+type curl dialog git &>/dev/null || {
   echo -e "$Y- 正在安装依赖$O"
-  pacman -Syu --noconfirm --needed --overwrite "*" curl dialog git nodejs npm || abort "依赖安装失败"
+  pacman -Syu --noconfirm --needed --overwrite "*" curl dialog git || abort "依赖安装失败"
+}
+
+type npm &>/dev/null || {
+  echo -e "$Y- 正在安装 Node.js 和 npm$O"
+  pacman -Syu --noconfirm --needed nodejs npm || abort "Node.js 和 npm 安装失败"
 }
 
 abort_update() {
@@ -285,4 +290,4 @@ EOF
   node app &
 }
 
-echo -e "$G- 安装完成，输入 rabbit 以启动Yunzai$O"
+Main_Menu
