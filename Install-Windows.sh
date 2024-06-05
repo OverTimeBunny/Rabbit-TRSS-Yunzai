@@ -2,7 +2,7 @@
 
 # Rabbit TRSS Yunzai 安装脚本
 NAME=v1.0.0;VERSION=202306010
-R="\033[1;31m" G="\033[1;32m" Y="\033[1;33m" C="\033[1;36m" B="\033[m" O="\033[m"
+R="\033[1;31m" G="\033[1;32m" Y="\033[1;33m" C="\033[1;36m" B="[1;m" O="[m"
 
 abort() { echo -e "$R! $@$O"; exit 1; }
 
@@ -24,16 +24,25 @@ echo -e "$G 欢迎使用 Rabbit-TRSS-Yunzai ! 作者：重装小兔 🐰$O"
 abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } || abort "你他喵的网络是怎么回事！给我好好检查你的网络环境！"; }
 
 install_dependencies() {
-  if ! type pacman &>/dev/null; then
-    abort "找不到 pacman 命令，请确认安装了正确的 Arch Linux 环境"
+  if [ "$(uname)" == "Linux" ]; then
+    if ! type pacman &>/dev/null; then
+      abort "找不到 pacman 命令，请确认安装了正确的 Arch Linux 环境"
+    fi
+    echo -e "$Y- 正在设置清华大学源$O"
+    sudo bash -c 'echo -e "[archlinuxcn]\nServer = https://mirrors.tuna.tsinghua.edu.cn/archlinuxcn/\$arch" > /etc/pacman.d/mirrorlist'
+    sudo pacman -Syy
+    sudo pacman-key --init
+    sudo pacman-key --populate archlinux
+    sudo pacman -Syy archlinux-keyring
+    sudo pacman -Syu --noconfirm --needed --overwrite "*" curl git nodejs npm || abort "依赖安装失败"
+    sudo npm install -g pnpm || abort "pnpm 安装失败"
+  elif [ "$(uname -o)" == "Msys" ]; then
+    echo -e "$Y- 正在安装依赖$O"
+    pacman -Syy --noconfirm --needed --overwrite "*" curl git nodejs npm || abort "依赖安装失败"
+    npm install -g pnpm || abort "pnpm 安装失败"
+  else
+    abort "不支持的系统环境"
   fi
-  echo -e "$Y- 正在安装依赖$O"
-  pacman -Syy
-  pacman-key --init
-  pacman-key --populate archlinux
-  pacman -Syy archlinux-keyring
-  pacman -Syu --noconfirm --needed --overwrite "*" curl git nodejs npm || abort "依赖安装失败"
-  npm install -g pnpm || abort "pnpm 安装失败"
 }
 
 download() {
@@ -64,15 +73,34 @@ $ShortCut.Save()'
   exit
 }
 
-N=1
-install_dependencies || abort "依赖安装失败"
-download || abort "下载文件失败"
+install_plugins() {
+  cd "$DIR/plugins"
+  echo -e "$Y- 安装常用插件$O"
+  git clone --depth 1 https://gitee.com/OvertimeBunny/trss-plugin.git || abort "TRSS-Plugin 安装失败"
+  git clone --depth 1 https://gitee.com/yoimiya-kokomi/miao-plugin.git || abort "Miao-Plugin 安装失败"
+  git clone --depth 1 https://gitee.com/guoba-yunzai/guoba-plugin.git || abort "Guoba-Plugin 安装失败"
+  cd "$DIR"
+}
 
-# 启动菜单
+start_test() {
+  echo -e "$Y- 正在启动测试$O"
+  node app.js &
+  sleep 5
+  echo -e "$Y- 加载配置文件$O"
+  if [ -d "$DIR/data" ]; then
+    echo -e "$Y- 监听文件位置：Yunzai/data$O"
+  else
+    echo -e "$R! Yunzai/data 文件加载失败$O"
+    exit 1
+  fi
+  kill %1
+  main_menu
+}
+
 main_menu() {
   clear
   echo -e "$Y- 回来了小老弟？给你检查一下依赖$O"
-  cd $DIR
+  cd "$DIR"
   pnpm update
   pnpm install
 
@@ -110,6 +138,36 @@ configure_qqbot() {
 
   kill %1
 
+  # 获取设备公网 IP
+  echo '请选择获取公网IP方式（使用↑↓控制）'
+  select ip_choice in 自动获取 手动输入; do
+    if [ "$ip_choice" == "自动获取" ]; then
+      public_ip=$(curl -s ifconfig.me)
+    else
+      read -p '请输入你的公网IP: ' public_ip
+    fi
+    break
+  done
+
+  # 查看并修改 Yunzai/config/config/bot.yaml 文件
+  echo -e "$Y- 正在修改 Yunzai/config/config/bot.yaml 文件$O"
+  if [ -f "$DIR/config/config/bot.yaml" ]; then
+    sed -i "s|url:.*|url: http://$public_ip:2536|g" "$DIR/config/config/bot.yaml"
+
+    echo '是否开启 / 转 #（默认开启）'
+    select slash_to_hash in 开启 关闭; do
+      if [ "$slash_to_hash" == "开启" ]; then
+        sed -i "s|/→#:.*|/→#: true|g" "$DIR/config/config/bot.yaml"
+      else
+        sed -i "s|/→#:.*|/→#: false|g" "$DIR/config/config/bot.yaml"
+      fi
+      break
+    done
+  else
+    echo -e "$R! Yunzai/config/config/bot.yaml 文件不存在$O"
+    exit 1
+  fi
+
   read -p '输入你的官方机器人QQ: ' bot_qq
   read -p '输入你的官方机器人ID: ' bot_id
   read -p '输入你的官方机器人Token: ' bot_token
@@ -135,7 +193,7 @@ configure_qqbot() {
     break
   done
 
-  cat > $DIR/config/QQBot.yaml <<EOF
+  cat > "$DIR/config/QQBot.yaml" <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai QQBot Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-QQBot-Plugin
@@ -185,7 +243,7 @@ configure_icqq() {
 
   for url in "${sign_urls[@]}"; do
     start_time=$(date +%s%N)
-    curl -o /dev/null -s "$url"
+    curl -o /dev/null -s $url
     end_time=$(date +%s%N)
     latency=$(( (end_time - start_time) / 1000000 ))
 
@@ -197,7 +255,7 @@ configure_icqq() {
 
   echo -e "$Y- 已选签名${selected_url}，延迟${min_latency}ms，正在配置$O"
 
-  cat > $DIR/config/ICQQ.yaml <<EOF
+  cat > "$DIR/config/ICQQ.yaml" <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai ICQQ Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-ICQQ-Plugin
@@ -214,7 +272,7 @@ EOF
   read -p '请输入你机器人的QQ: ' bot_qq
   read -p '请输入你机器人的QQ密码: ' bot_password
 
-  cat >> $DIR/config/ICQQ.yaml <<EOF
+  cat >> "$DIR/config/ICQQ.yaml" <<EOF
   - $bot_qq:$bot_password:2
 EOF
 
@@ -243,7 +301,7 @@ configure_ntqq() {
 
   echo -e "$Y- 启动测试成功，正在为你配置签名$O"
 
-  cat > $DIR/config/Lagrange.yaml <<EOF
+  cat > "$DIR/config/Lagrange.yaml" <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai Lagrange Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-Lagrange-Plugin
@@ -260,11 +318,14 @@ EOF
   read -p '请输入你机器人的QQ账号: ' bot_qq
   read -p '请输入你机器人的QQ密码: ' bot_password
 
-  cat >> $DIR/config/Lagrange.yaml <<EOF
+  cat >> "$DIR/config/Lagrange.yaml" <<EOF
   - $bot_qq:$bot_password
 EOF
 
   node app.js &
 }
 
-main_menu
+install_dependencies
+download
+install_plugins
+start_test
