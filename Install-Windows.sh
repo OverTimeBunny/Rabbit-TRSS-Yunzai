@@ -36,9 +36,8 @@ abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } |
 
 download() {
   case "$N" in
-    1) Server="Gitee" URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main/Install-Windows.sh
-";;
-    2) Server="GitHub" URL="https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main/Install-Windows.sh";;
+    1) Server="Gitee" URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main";;
+    2) Server="GitHub" URL="https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main";;
   esac
 
   echo -e "$Y- 正在从 $Server 服务器 下载版本信息$O"
@@ -175,7 +174,7 @@ Configure-QQBot() {
 
     echo '是否公域（使用↑↓控制）'
     select bot_public in 是 不是; do
-        if [ "$bot_public" == "是" ];then
+        if [ "$bot_public" == "是" ]; then
             bot_public=0
         else
             bot_public=1
