@@ -21,22 +21,12 @@ $B——————————————————————————
 
 echo -e "$G 欢迎使用 Rabbit-TRSS-Yunzai ! 作者：重装小兔 🐰$O"
 
-# 初始化 pacman 密钥
-echo -e "$Y- 正在初始化 pacman 密钥$O"
-pacman-key --init
-pacman-key --populate archlinux
-
-# 更新 CA 证书
-echo -e "$Y- 正在更新 CA 证书$O"
-pacman -Syy archlinux-keyring
-pacman -Syu ca-certificates --noconfirm
-
 abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } || abort "脚本下载失败，请检查网络，并尝试重新下载"; }
 
 download() {
   case "$N" in
-    1) Server="Gitee" URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main";;
-    2) Server="GitHub" URL="https://github.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main";;
+    1) Server="Gitee" URL="https://gitee.com/TimeRainStarSky/Yunzai";;
+    2) Server="GitHub" URL="https://github.com/TimeRainStarSky/Yunzai";;
   esac
 
   echo -e "$Y- 正在从 $Server 服务器 下载版本信息$O"
@@ -45,68 +35,30 @@ download() {
   NEWNAME="$(sed -n s/^name=//p<<<"$GETVER")"
   NEWMD5="$(sed -n s/^md5=//p<<<"$GETVER")"
   [ -n "$NEWVER" ] && [ -n "$NEWNAME" ] && [ -n "$NEWMD5" ] || abort_update "下载文件版本信息缺失"
-  
-  echo -e "$B  最新版本：$G$NEWNAME$C ($NEWVER)$O"
-  echo -e "$Y  开始下载$O"
-  
-  mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 "$URL/Main.sh" > "$DIR/Main.sh" || abort_update "下载失败"
+  echo -e "$B  最新版本：$G$NEWNAME$C ($NEWVER)$O\n"
+  echo -e "  开始下载"
+  mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 "$URL/Main.sh" -o "$DIR/Main.sh" || abort_update "下载失败"
   [ "$(md5sum "$DIR/Main.sh" | head -c 32)" = "$NEWMD5" ] || abort_update "下载文件校验错误"
-  
-  mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/Main.sh' "'"$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/Main.sh'"
-  
+  mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/Main.sh' "'"$@"'>"$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/Main.sh'"
+  if [ -n "$MSYS" ]; then
+    type powershell &>/dev/null && powershell -c '$ShortCut=(New-Object -ComObject WScript.Shell).CreateShortcut([System.Environment]::GetFolderPath("Desktop")+"\'"$(basename "$DIR"|tr '_' ' ')"'.lnk")
+$ShortCut.TargetPath="'"$(cygpath -w /msys2.exe)"'"
+$ShortCut.Arguments="'"$CMD"'"
+$ShortCut.Save()'
+  else
+    type wsl.exe powershell.exe &>/dev/null && powershell.exe -c '$ShortCut=(New-Object -ComObject WScript.Shell).CreateShortcut([System.Environment]::GetFolderPath("Desktop")+"\'"$(basename "$DIR"|tr '_' ' ')"'.lnk")
+$ShortCut.TargetPath="'"$(command -v wsl.exe|sed -E 's|/mnt/([a-z]*)/|\1:\\|;s|/|\\|g')"'"
+$ShortCut.Arguments="'"$CMD"'"
+$ShortCut.Save()'
+  fi
   echo -e "$G- 脚本安装完成，启动命令：$C$CMD$O"
   exit
 }
 
-# 检查并安装依赖
-check_and_install_deps() {
-  echo -e "$Y- 为你安装相关依赖，请稍等$O"
-  pacman -Syu --noconfirm nodejs redis git npm yarn openjdk-11-jdk python ffmpeg make gcc nano patch pyenv python-pip sqlite fish
-  npm install -g pnpm
-}
+download
 
-install_yunzai() {
-  echo -e "$Y- 正在为你安装TRSS崽$O"
-  git clone --depth 1 https://gitee.com/TimeRainStarSky/Yunzai $DIR || {
-    echo -e "$Y- Gitee下载失败，尝试切换到GitHub$O"
-    git clone --depth 1 https://github.com/TimeRainStarSky/Yunzai $DIR || {
-      echo -e "$R! 你这破网是怎么回事！$O"
-      exit 1
-    }
-  }
-  cd $DIR
-  pnpm install
-}
-
-install_plugins() {
-  echo -e "$Y- 正在为你安装基础插件：TRSS-Plugin、Miao-Plugin、Guoba-Plugin$O"
-  git clone --depth 1 https://gitee.com/OvertimeBunny/trss-plugin.git plugins/TRSS-Plugin
-  cd plugins/TRSS-Plugin && pnpm install && cd ..
-
-  git clone --depth=1 https://gitee.com/yoimiya-kokomi/miao-plugin.git plugins/miao-plugin
-  cd plugins/miao-plugin && pnpm install && cd ..
-
-  git clone --depth=1 https://gitee.com/guoba-yunzai/guoba-plugin.git plugins/Guoba-Plugin
-  cd plugins/Guoba-Plugin && pnpm install && cd ..
-}
-
-configure_yunzai() {
-  echo -e "$Y- 正在启动并配置 Yunzai$O"
-  node app &
-  sleep 5
-  echo -e "$Y- 加载配置文件$O"
-  if [ -d "$DIR/data" ]; then
-    echo -e "$Y- 监听文件位置：Yunzai/data$O"
-  else
-    echo -e "$R! Yunzai/data 文件加载失败$O"
-    exit 1
-  fi
-  kill %1
-}
-
+# 启动菜单
 main_menu() {
-  trap 'main_menu' SIGINT
-
   clear
   echo -e "$Y- 回来了小老弟？给你检查一下依赖$O"
   cd $DIR
@@ -172,7 +124,7 @@ configure_qqbot() {
     break
   done
 
-  cat > $DIR/config/QQBot.yaml <<EOF
+  cat > "$DIR/config/QQBot.yaml" <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai QQBot Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-QQBot-Plugin
@@ -234,7 +186,7 @@ configure_icqq() {
 
   echo -e "$Y- 已选签名${selected_url}，延迟${min_latency}ms，正在配置$O"
 
-  cat > $DIR/config/ICQQ.yaml <<EOF
+  cat > "$DIR/config/ICQQ.yaml" <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai ICQQ Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-ICQQ-Plugin
@@ -251,7 +203,7 @@ EOF
   read -p '请输入你机器人的QQ: ' bot_qq
   read -p '请输入你机器人的QQ密码: ' bot_password
 
-  cat >> $DIR/config/ICQQ.yaml <<EOF
+  cat >> "$DIR/config/ICQQ.yaml" <<EOF
   - $bot_qq:$bot_password:2
 EOF
 
@@ -280,7 +232,7 @@ configure_ntqq() {
 
   echo -e "$Y- 启动测试成功，正在为你配置签名$O"
 
-  cat > $DIR/config/Lagrange.yaml <<EOF
+  cat > "$DIR/config/Lagrange.yaml" <<EOF
 tips:
   - 欢迎使用 TRSS-Yunzai Lagrange Plugin ! 作者：时雨🌌星空
   - 参考：https://github.com/TimeRainStarSky/Yunzai-Lagrange-Plugin
@@ -297,28 +249,44 @@ EOF
   read -p '请输入你机器人的QQ账号: ' bot_qq
   read -p '请输入你机器人的QQ密码: ' bot_password
 
-  cat >> $DIR/config/Lagrange.yaml <<EOF
+  cat >> "$DIR/config/Lagrange.yaml" <<EOF
   - $bot_qq:$bot_password
 EOF
 
   node app &
 }
 
-echo -e "$Y- 正在下载脚本$O"
-N=1
+main_menu
+
+# 启动 rabbit 脚本
+echo -e "$Y- 正在下载 Yunzai 崽$O"
 download
 
-# 安装依赖
-check_and_install_deps
+# 安装依赖和插件
+echo -e "$Y- 安装项目依赖$O"
+pnpm install
 
-# 安装Yunzai
-install_yunzai
+echo -e "$Y- 正在为你安装基础插件：TRSS-Plugin、Miao-Plugin、Guoba-Plugin$O"
+git clone --depth 1 https://gitee.com/OvertimeBunny/trss-plugin.git plugins/TRSS-Plugin
+cd plugins/TRSS-Plugin && pnpm install && cd ..
 
-# 安装插件
-install_plugins
+git clone --depth=1 https://gitee.com/yoimiya-kokomi/miao-plugin.git plugins/miao-plugin
+cd plugins/miao-plugin && pnpm install && cd ..
 
-# 配置Yunzai
-configure_yunzai
+git clone --depth=1 https://gitee.com/guoba-yunzai/guoba-plugin.git plugins/Guoba-Plugin
+cd plugins/Guoba-Plugin && pnpm install && cd ..
 
-# 启动主菜单
-main_menu
+echo -e "$G- 安装完成，即将启动云崽$O"
+node app &
+sleep 5
+echo -e "$Y- 加载配置文件$O"
+if [ -d "$DIR/data" ]; then
+  echo -e "$Y- 监听文件位置：Yunzai/data$O"
+else
+  echo -e "$R! Yunzai/data 文件加载失败$O"
+  exit 1
+fi
+
+kill %1
+
+trap 'main_menu' SIGINT
