@@ -21,7 +21,19 @@ $B——————————————————————————
 
 echo -e "$G 欢迎使用 Rabbit-TRSS-Yunzai ! 作者：重装小兔 🐰$O"
 
-abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } || abort "脚本下载失败，请检查网络，并尝试重新下载"; }
+abort_update() { echo -e "$R! $@$O"; [ "$N" -lt 10 ] && { ((N++)); download; } || abort "你他喵的网络是怎么回事！给我好好检查你的网络环境！"; }
+
+# 检查并安装git
+if ! type git &>/dev/null; then
+  echo -e "$Y- 正在安装 git$O"
+  if type pacman &>/dev/null; then
+    pacman -Sy --noconfirm git || abort "git 安装失败"
+  elif type apt-get &>/dev/null; then
+    apt-get update && apt-get install -y git || abort "git 安装失败"
+  else
+    abort "找不到合适的包管理器来安装 git"
+  fi
+fi
 
 download() {
   case "$N" in
