@@ -28,10 +28,18 @@ type curl dialog git &>/dev/null || {
   pacman -Syu --noconfirm --needed --overwrite "*" curl dialog git || abort "依赖安装失败"
 }
 
-type npm &>/dev/null || {
-  echo -e "$Y- 正在安装 Node.js 和 npm$O"
-  pacman -Syu --noconfirm --needed nodejs npm || abort "Node.js 和 npm 安装失败"
-}
+# 更换清华大学源
+echo -e "$Y- 正在更换清华大学源$O"
+cat > /etc/pacman.d/mirrorlist <<EOF
+Server = https://mirrors.tuna.tsinghua.edu.cn/msys2/msys/\$repo
+EOF
+
+# 更新密钥环并安装依赖
+echo -e "$Y- 正在更新密钥环并安装依赖$O"
+pacman-key --init
+pacman-key --populate msys2
+pacman -Syyu --noconfirm
+pacman -S --noconfirm nodejs npm
 
 abort_update() {
   echo -e "$R! $@$O"
