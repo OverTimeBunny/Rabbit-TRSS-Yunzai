@@ -65,8 +65,8 @@ $ShortCut.Save()'
 }
 
 N=1
-install_dependencies
-download
+install_dependencies || abort "依赖安装失败"
+download || abort "下载文件失败"
 
 # 启动菜单
 main_menu() {
