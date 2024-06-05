@@ -31,9 +31,9 @@ download() {
 
   echo -e "$Y- 正在从 $Server 服务器 下载版本信息$O"
   GETVER="$(curl -kL --retry 2 --connect-timeout 5 "$URL/version" 2>/dev/null)" || abort_update "下载失败"
-  NEWVER="$(sed -n s/^version=//p<<<"$GETVER")"
-  NEWNAME="$(sed -n s/^name=//p<<<"$GETVER")"
-  NEWMD5="$(sed -n s/^md5=//p<<<"$GETVER")"
+  NEWVER="$(sed -n 's/^version=//p' <<< "$GETVER")"
+  NEWNAME="$(sed -n 's/^name=//p' <<< "$GETVER")"
+  NEWMD5="$(sed -n 's/^md5=//p' <<< "$GETVER")"
   [ -n "$NEWVER" ] && [ -n "$NEWNAME" ] && [ -n "$NEWMD5" ] || abort_update "下载文件版本信息缺失"
   echo -e "$B  最新版本：$G$NEWNAME$C ($NEWVER)$O\n"
   echo -e "  开始下载"
@@ -55,6 +55,7 @@ $ShortCut.Save()'
   exit
 }
 
+N=1
 download
 
 # 启动菜单
