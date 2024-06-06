@@ -44,15 +44,22 @@ download() {
     2) Server="Gitee"; URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main" ;;
   esac
   echo "正在从 $Server 服务器 下载版本信息"
-  GETVER="$(curl -L --retry 2 --connect-timeout 5 "$URL/version")" || abort_update "下载失败"
+  GETVER="$(curl -kL --retry 2 --connect-timeout 5 "$URL/version" || true)"
+  if [ -z "$GETVER" ]; then
+    abort_update "下载失败"
+  fi
   NEWVER="$(sed -n s/^version=//p<<<"$GETVER")"
   NEWNAME="$(sed -n s/^name=//p<<<"$GETVER")"
   NEWMD5="$(sed -n s/^md5=//p<<<"$GETVER")"
-  [ -n "$NEWVER" ] && [ -n "$NEWNAME" ] && [ -n "$NEWMD5" ] || abort_update "下载文件版本信息缺失"
+  if [ -z "$NEWVER" ] || [ -z "$NEWNAME" ] || [ -z "$NEWMD5" ]; then
+    abort_update "下载文件版本信息缺失"
+  fi
   echo "$B  最新版本：$G$NEWNAME$C ($NEWVER)$O"
   echo "开始下载"
-  mkdir -vp "$DIR" && curl -L --retry 2 --connect-timeout 5 "$URL/Main.sh" > "$DIR/Main.sh" || abort_update "下载失败"
-  [ "$(md5sum "$DIR/Main.sh" | head -c 32)" = "$NEWMD5" ] || abort_update "下载文件校验错误"
+  mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 "$URL/Main.sh" > "$DIR/Main.sh" || abort_update "下载失败"
+  if [ "$(md5sum "$DIR/Main.sh" | head -c 32)" != "$NEWMD5" ]; then
+    abort_update "下载文件校验错误"
+  fi
   mkdir -vp "$CMDPATH" && echo -n "exec bash '$DIR/Main.sh' "'"$@"' > "$CMDPATH/$CMD" && chmod 755 "$CMDPATH/$CMD" || abort "脚本执行命令 $CMDPATH/$CMD 设置失败，手动执行命令：bash '$DIR/Main.sh'"
 }
 
