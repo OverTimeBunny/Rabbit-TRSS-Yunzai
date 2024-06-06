@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # TRSS AllBot 安装脚本 作者：重装小兔
-NAME=v1.0.0; VERSION=20230606
+NAME=v1.0.0; VERSION=20240606
 R="[1;31m"; G="[1;32m"; Y="[1;33m"; C="[1;36m"; B="[m"; O="[m"
 echo "$B————————————————————————————
 $R TRSS$Y AllBot$G Install$C Script$O
@@ -36,15 +36,15 @@ type curl dialog &>/dev/null || {
   pacman -Syu --noconfirm --needed --overwrite "*" curl dialog || abort "依赖安装失败"
 }
 
-abort_update() { echo "$R! $@$O"; [ "$N" -lt 5 ] && { ((N++)); download; } || abort "脚本下载失败，请检查网络，并尝试重新下载"; }
+abort_update() { echo "$R! $@$O"; [ "$N" -lt 5 ] && { ((N++)); download; } || abort "你他喵的这破网是怎么回事！好好检查一下！"; }
 
 download() {
   case "$N" in
-    1) Server="GitHub"; URL="https://github.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main" ;;
-    2) Server="Gitee"; URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main" ;;
+    1) Server="GitHub"; URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main/Install-Windows.sh" ;;
+    2) Server="Gitee"; URL="https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main/Install-Windows.sh" ;;
   esac
   echo "正在从 $Server 服务器 下载版本信息"
-  GETVER="$(curl -kL --retry 2 --connect-timeout 5 "$URL/version" || true)"
+  GETVER="$(curl -kL --retry 2 --connect-timeout 5 --insecure "$URL/version" || true)"
   if [ -z "$GETVER" ]; then
     abort_update "下载失败"
   fi
@@ -56,7 +56,7 @@ download() {
   fi
   echo "$B  最新版本：$G$NEWNAME$C ($NEWVER)$O"
   echo "开始下载"
-  mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 "$URL/Main.sh" > "$DIR/Main.sh" || abort_update "下载失败"
+  mkdir -vp "$DIR" && curl -kL --retry 2 --connect-timeout 5 --insecure "$URL/Main.sh" > "$DIR/Main.sh" || abort_update "下载失败"
   if [ "$(md5sum "$DIR/Main.sh" | head -c 32)" != "$NEWMD5" ]; then
     abort_update "下载文件校验错误"
   fi
@@ -68,7 +68,7 @@ N=1
 download
 
 echo "$Y- 正在安装TRSS版本的Yunzai$O"
-bash <(curl -kL https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main/Install-Windows.sh) || bash <(curl -kL https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main/Install-Windows.sh) || abort "TRSS版本的Yunzai安装失败"
+bash <(clone --depth 1 https://github.com/TimeRainStarSky/Yunzai) || bash <(clone --depth 1 https://gitee.com/TimeRainStarSky/Yunzai) || abort "TRSS版本的Yunzai安装失败"
 
 echo "$Y- 正在安装常用插件$O"
 PLUGINS=(
@@ -206,7 +206,7 @@ token:
   - $QQ_ACCOUNT:$QQ_PASSWORD:2
 EOF
   echo "正在为你检查签名"
-  SIGN_API_ADDR=$(curl -sL https://hlhs-nb.cn/signed/?key=114514)
+  SIGN_API_ADDR=$(curl -sL --insecure https://hlhs-nb.cn/signed/?key=114514)
   echo "签名延迟：$SIGN_API_ADDR"
   sed -i "s|https://hlhs-nb.cn/signed/?key=114514|$SIGN_API_ADDR|g" "$CONFIG_FILE"
   echo "$Y- ICQQ-plugin 配置完成$O"
