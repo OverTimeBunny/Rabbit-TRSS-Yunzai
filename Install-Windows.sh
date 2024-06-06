@@ -40,8 +40,8 @@ abort_update() { echo "$R! $@$O"; [ "$N" -lt 5 ] && { ((N++)); download; } || ab
 
 download() {
   case "$N" in
-    1) Server="GitHub"; URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main/Install-Windows.sh" ;;
-    2) Server="Gitee"; URL="https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main/Install-Windows.sh" ;;
+    1) Server="GitHub"; URL="https://raw.githubusercontent.com/OvertimeBunny/Rabbit-TRSS-Yunzai/main" ;;
+    2) Server="Gitee"; URL="https://gitee.com/OvertimeBunny/Rabbit-TRSS-Yunzai/raw/main" ;;
   esac
   echo "正在从 $Server 服务器 下载版本信息"
   GETVER="$(curl -kL --retry 2 --connect-timeout 5 --insecure "$URL/version" || true)"
@@ -68,7 +68,7 @@ N=1
 download
 
 echo "$Y- 正在安装TRSS版本的Yunzai$O"
-bash <(clone --depth 1 https://github.com/TimeRainStarSky/Yunzai) || bash <(clone --depth 1 https://gitee.com/TimeRainStarSky/Yunzai) || abort "TRSS版本的Yunzai安装失败"
+git clone --depth 1 https://github.com/TimeRainStarSky/Yunzai "$DIR/Yunzai" || git clone --depth 1 https://gitee.com/TimeRainStarSky/Yunzai "$DIR/Yunzai" || abort "TRSS版本的Yunzai安装失败"
 
 echo "$Y- 正在安装常用插件$O"
 PLUGINS=(
@@ -82,16 +82,16 @@ for PLUGIN in "${PLUGINS[@]}"; do
   GITHUB_URL="$(echo $PLUGIN | awk '{print $2}')"
   GITEE_URL="$(echo $PLUGIN | awk '{print $3}')"
   echo "$Y- 正在安装插件 $NAME$O"
-  git clone "$GITHUB_URL" "$DIR/plugins/$NAME" || git clone "$GITEE_URL" "$DIR/plugins/$NAME" || echo "$R! 插件 $NAME 安装失败$O"
+  git clone "$GITHUB_URL" "$DIR/Yunzai/plugins/$NAME" || git clone "$GITEE_URL" "$DIR/Yunzai/plugins/$NAME" || echo "$R! 插件 $NAME 安装失败$O"
 done
 
 echo "$Y- 正在测试启动并监听文件$O"
-cd "$DIR"
+cd "$DIR/Yunzai"
 ./start.sh &
 PID=$!
 sleep 10
 
-if [ -d "$DIR/data" ]; then
+if [ -d "$DIR/Yunzai/data" ]; then
   echo "$G- data 文件夹已创建，停止运行$O"
   kill $PID
 else
@@ -102,9 +102,9 @@ fi
 
 echo "$Y- 监听配置文件正常加载后，自动退出并进入交互页面$O"
 CONFIG_FILES=(
-  "$DIR/config/config/bot.yaml"
-  "$DIR/config/ICQQ.yaml"
-  "$DIR/config/Lagrange.yaml"
+  "$DIR/Yunzai/config/config/bot.yaml"
+  "$DIR/Yunzai/config/ICQQ.yaml"
+  "$DIR/Yunzai/config/Lagrange.yaml"
 )
 
 for CONFIG in "${CONFIG_FILES[@]}"; do
@@ -125,16 +125,16 @@ choose_adapter() {
 
   case $ADAPTER in
     1) PLUGIN_URL="https://github.com/TimeRainStarSky/Yunzai-QQBot-Plugin"
-       CONFIG_FILE="$DIR/config/config/bot.yaml";;
+       CONFIG_FILE="$DIR/Yunzai/config/config/bot.yaml";;
     2) PLUGIN_URL="https://github.com/TimeRainStarSky/Yunzai-ICQQ-Plugin"
-       CONFIG_FILE="$DIR/config/ICQQ.yaml";;
+       CONFIG_FILE="$DIR/Yunzai/config/ICQQ.yaml";;
     3) PLUGIN_URL="https://github.com/TimeRainStarSky/Yunzai-Lagrange-Plugin"
-       CONFIG_FILE="$DIR/config/Lagrange.yaml";;
+       CONFIG_FILE="$DIR/Yunzai/config/Lagrange.yaml";;
     *) echo "$R! 无效的选择$O"; exit 1;;
   esac
 
   echo "$Y- 正在安装适配器$O"
-  git clone "$PLUGIN_URL" "$DIR/plugins/$(basename $PLUGIN_URL)"
+  git clone "$PLUGIN_URL" "$DIR/Yunzai/plugins/$(basename $PLUGIN_URL)"
 
   echo "$Y- 配置适配器 $O"
   configure_adapter
@@ -250,8 +250,8 @@ interaction_menu() {
   read OPERATION
 
   case $OPERATION in
-    1) cd "$DIR"; ./start.sh;;
-    2) cd "$DIR/plugins"; echo "插件管理功能暂未实现";;
+    1) cd "$DIR/Yunzai"; ./start.sh;;
+    2) cd "$DIR/Yunzai/plugins"; echo "插件管理功能暂未实现";;
     3) fish;;
     4) exit 0;;
     *) echo "$R! 无效的操作$O";;
